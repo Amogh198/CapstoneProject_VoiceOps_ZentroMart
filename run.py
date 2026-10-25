@@ -62,13 +62,14 @@ def main(argv=None):
     conversation_evaluation = commands.add_parser("evaluate-conversations", help="Evaluate all provided multi-turn conversations")
     conversation_evaluation.add_argument("--output", default=None, help="Path for detailed JSON evaluation results")
     conversation_evaluation.add_argument("--dataset-dir", default=None, help="Dataset folder; defaults to this project folder")
+    conversation_evaluation.add_argument("--resume", action="store_true", help="Resume from completed conversations in the output file")
     args = parser.parse_args(argv)
     if args.command == "batch":
         process_audio_folder(args.input_dir, args.output_dir, args.language, args.conversation)
     elif args.command == "evaluate":
         evaluate(args.output, args.dataset_dir or dataset_root())
     elif args.command == "evaluate-conversations":
-        evaluate_conversations(args.output, args.dataset_dir or dataset_root())
+        evaluate_conversations(args.output, args.dataset_dir or dataset_root(), args.resume)
 
 
 if __name__ == "__main__":

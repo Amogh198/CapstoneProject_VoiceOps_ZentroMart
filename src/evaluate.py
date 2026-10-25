@@ -87,7 +87,7 @@ def evaluate(output_path=None, root=None):
     return report
 
 
-def evaluate_conversations(output_path=None, root=None):
+def evaluate_conversations(output_path=None, root=None, resume=False):
     root = Path(root or dataset_root())
     client = ChatClient()
     index = KnowledgeIndex(root)
@@ -96,8 +96,25 @@ def evaluate_conversations(output_path=None, root=None):
     conversations = {}
     for row in rows:
         conversations.setdefault(row["conversation_id"], []).append(row)
+    output_path = Path(output_path or root / "outputs" / "conversation_evaluation.json")
     results = []
+    completed = set()
+    if resume and output_path.exists():
+        previous = json.loads(output_path.read_text(encoding="utf-8"))
+        results = previous.get("results", [])
+        completed = set(previous.get("completed_conversations", []))
+        if not completed:
+            result_counts = {}
+            for item in results:
+                result_counts[item["conversation_id"]] = result_counts.get(item["conversation_id"], 0) + 1
+            completed = {
+                conversation_id
+                for conversation_id, turns in conversations.items()
+                if result_counts.get(conversation_id) == len(turns)
+            }
     for conversation_id, turns in conversations.items():
+        if conversation_id in completed:
+            continue
         agent = SupportAgent(client=client, index=index)
         for row in sorted(turns, key=lambda item: int(item["turn"])):
             answer = agent.respond(row["customer_message"])
@@ -122,12 +139,22 @@ def evaluate_conversations(output_path=None, root=None):
                 "retrieved_evidence": sorted(retrieved),
                 "retrieval_hit": bool(gold.intersection(retrieved)) if gold else None,
             })
+        completed.add(conversation_id)
         print(f"Evaluated conversation {conversation_id} ({len(turns)} turns)")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        checkpoint = {
+            "conversation_count": len(conversations),
+            "completed_conversations": sorted(completed),
+            "turn_count": len(results),
+            "results": results,
+        }
+        output_path.write_text(json.dumps(checkpoint, ensure_ascii=False, indent=2), encoding="utf-8")
     required_turns = [item for item in results if item["required_fact_count"]]
     tool_turns = [item for item in results if item["expected_tools"]]
     retrieval_turns = [item for item in results if item["retrieval_hit"] is not None]
     report = {
         "conversation_count": len(conversations),
+        "completed_conversations": sorted(completed),
         "turn_count": len(results),
         "required_fact_turn_accuracy": round(sum(item["must_include_met"] for item in required_turns) / len(required_turns), 4) if required_turns else None,
         "tool_expectation_accuracy": round(sum(item["tool_expectations_met"] for item in tool_turns) / len(tool_turns), 4) if tool_turns else None,
@@ -135,7 +162,6 @@ def evaluate_conversations(output_path=None, root=None):
         "forbidden_claim_turns": sum(bool(item["forbidden_claims"]) for item in results),
         "results": results,
     }
-    output_path = Path(output_path or root / "outputs" / "conversation_evaluation.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({key: value for key, value in report.items() if key != "results"}, indent=2))
