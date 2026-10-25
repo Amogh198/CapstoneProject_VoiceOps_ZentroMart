@@ -6,7 +6,7 @@ This project implements the four capstone steps: an LLM baseline, section-aware 
 
 1. Use Python 3.10 or newer and install the dependencies with `python -m pip install -r requirements.txt`.
 2. Copy `.env.example` to `.env` and add your own `GROQ_API_KEY` and `GNANI_API_KEY`. Keep `.env` private. The default Groq model is `qwen/qwen3.8-27b`; change it with `GROQ_MODEL` if needed.
-3. Put customer recordings in a folder, then run `python run.py batch path/to/audio path/to/output`. Supported inputs: WAV, MP3, M4A, FLAC and OGG. The output folder contains one WAV reply per input and `results.jsonl` with transcripts, replies and retrieved section IDs.
+3.** Create a folder named voice_input inside your project and put the recording in it. For example, say: “What is the return policy for groceries? then run `python run.py batch .\voice_input .\voice_output --language en-IN`. Supported inputs: WAV, MP3, M4A, FLAC and OGG. The output folder contains one WAV reply per input and `results.jsonl` with transcripts, replies and retrieved section IDs.**
 4. For a multi-turn demo, put the turns in filenames that sort in conversation order and add `--conversation`.
 5. Compare prompt-only and RAG answers with `python run.py evaluate`. Results are saved to `outputs/evaluation.json`.
 6. Generate the report with `python make_report.py`. After recording `demo.mp4` in this folder and completing the report scores, create the code-only ZIP with `python make_submission.py`.
