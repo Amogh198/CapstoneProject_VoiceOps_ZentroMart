@@ -1,0 +1,4 @@
+# The core agent uses only Python's standard library and the supplied mock tools.
+gnani-vachana
+groq>=0.11.0
+reportlab>=4.0

@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.py[cod]
+outputs/
+demo_audio/
+data/*.csv
+kb/*.md
+practice/*.csv
+sample_outputs/*.wav
+tools/tickets_created.csv
+submission.zip
